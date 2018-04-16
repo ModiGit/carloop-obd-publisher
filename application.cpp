@@ -83,6 +83,7 @@ const auto OBD_PID_ACCELERATOR_PEDAL_POSITION_E          = 0X4a;
 const auto OBD_PID_COMMANDED_THROTTLE_ACTUATOR           = 0X4c;
 
 const size_t NUM_PIDS_TO_REQUEST = 30;
+
 const uint8_t pidsToRequest[NUM_PIDS_TO_REQUEST] = {
 	OBD_PID_ENGINE_LOAD,
 	OBD_PID_COOLANT_TEMPERATURE,
@@ -150,7 +151,7 @@ void loop() {
  * and: https://en.wikipedia.org/wiki/OBD-II_PIDs#Standard_PIDs
  */
 void sendObdRequest() {
-	pidIndex = (pidIndex + 1) % NUM_PIDS_TO_REQUEST;
+	pidIndex = (pidIndex + 1) % 5;
 
 	CANMessage message;
 	message.id = OBD_CAN_BROADCAST_ID;
@@ -176,6 +177,9 @@ void waitForObdResponse() {
 	CANMessage message;
 	while (carloop.can().receive(message)) {
 		canMessageCount++;
+		if (message.id <= 0x700) {
+			continue;
+		}
 		if (message.id == 0x130) {
 			// This message gets sent every tenth of a second,
 			// so only publish it when the value changes.
@@ -251,7 +255,7 @@ String dumpMessage(const CANMessage &message) {
 	for (int i = startIdx; i <= lastIdx; i++) {
 		str += String::format("%02x", message.data[i]);
 	}
-	str += ",";
+	str += "\n";
 	return str;
 }
 
